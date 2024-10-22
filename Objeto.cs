@@ -4,7 +4,6 @@ namespace Tarea.Models
 {
     public class Objeto
     {
-        // Propiedad para identificar el producto de forma única
         public int Id { get; set; }
 
         [Required(ErrorMessage = "El número de inventario es obligatorio.")]
