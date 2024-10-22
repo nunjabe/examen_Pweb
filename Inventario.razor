@@ -1,0 +1,185 @@
+﻿@page "/inventario"
+@rendermode InteractiveServer
+
+<h1>Productos</h1>
+
+
+<div class="mb-3">
+    <button class="btn btn-info" @onclick="MostrarListado">Listado</button>
+    <button class="btn btn-secondary" @onclick="MostrarExistencias">Existencias</button>
+</div>
+
+<EditForm Model="_objeto" OnValidSubmit="GuardarProducto">
+    <DataAnnotationsValidator />
+    <ValidationSummary />
+
+    <div class="row mb-3">
+        <div class="col-2">
+            <label for="txtNumero">Inventario</label>
+        </div>
+        <div class="col-10">
+            <InputNumber id="txtNumero" class="form-control" @bind-Value="_objeto.NumeroInventario" />
+            <ValidationMessage For="@(() => _objeto.NumeroInventario)" />
+        </div>
+    </div>
+
+    <div class="row mb-3">
+        <div class="col-2">
+            <label for="txtNombre">Nombre</label>
+        </div>
+        <div class="col-10">
+            <InputText id="txtNombre" class="form-control" @bind-Value="_objeto.Nombre" />
+            <ValidationMessage For="@(() => _objeto.Nombre)" />
+        </div>
+    </div>
+
+    <div class="row mb-3">
+        <div class="col-2">
+            <label for="selectDepartamento">Departamento</label>
+        </div>
+        <div class="col-10">
+            <InputSelect id="selectDepartamento" class="form-control" @bind-Value="_objeto.Departamento">
+                <option value="">--Selecciona un departamento--</option>
+                <option value="Frutas">Frutas</option>
+                <option value="Verduras">Verduras</option>
+                <option value="Lácteos">Lácteos</option>
+            </InputSelect>
+            <ValidationMessage For="@(() => _objeto.Departamento)" />
+        </div>
+    </div>
+
+
+
+
+
+    
+    <button class="btn btn-primary" type="submit">@(_objeto.Id == 0 ? "Guardar" : "Actualizar")</button>
+    @if (_objeto.Id != 0)
+    {
+        <button class="btn btn-secondary" type="button" @onclick="CancelarEdicion">Cancelar</button>
+    }
+</EditForm>
+
+
+@if (!string.IsNullOrEmpty(_errorMessage))
+{
+    <div class="alert alert-danger">@_errorMessage</div>
+}
+
+@if (mostrarListado)
+{
+    <table class="table table-bordered mt-3">
+        <thead>
+            <tr>
+                <th>Inventario</th>
+                <th>Nombre</th>
+                <th>Departamento</th>
+                <th>Acciones</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var producto in Productos)
+            {
+                <tr>
+                    <td>@producto.NumeroInventario</td>
+                    <td>@producto.Nombre</td>
+                    <td>@producto.Departamento</td>
+                    <td>
+                        <button class="btn btn-warning" @onclick="() => EditarProducto(producto)">Editar</button>
+                        <button class="btn btn-danger" @onclick="() => EliminarProducto(producto)">Eliminar</button>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+
+@if (!mostrarListado)
+{
+    <h3>Concentrado de existencias</h3>
+    <ul>
+        <li>Frutas: @existenciasFrutas productos</li>
+        <li>Verduras: @existenciasVerduras productos</li>
+        <li>Lácteos: @existenciasLacteos productos</li>
+    </ul>
+}
+
+@code {
+    private Objeto _objeto = new Objeto();
+    private List<Objeto> Productos = new List<Objeto>();
+    private string? _errorMessage;
+    private bool mostrarListado = true;
+    private int existenciasFrutas = 0;
+    private int existenciasVerduras = 0;
+    private int existenciasLacteos = 0;
+
+    private void GuardarProducto()
+    {
+        if (Productos.Any(p => p.NumeroInventario == _objeto.NumeroInventario && p.Id != _objeto.Id))
+        {
+            _errorMessage = "El número de inventario ya está registrado.";
+        }
+        else
+        {
+            _errorMessage = null;
+            if (_objeto != null)
+            {
+                if (_objeto.Id == 0)
+                {
+                
+                    _objeto.Id = Productos.Count + 1; 
+                    Productos.Add(_objeto);
+                }
+                else
+                {
+                    
+                    var productoExistente = Productos.FirstOrDefault(p => p.Id == _objeto.Id);
+                    if (productoExistente != null)
+                    {
+                        productoExistente.NumeroInventario = _objeto.NumeroInventario;
+                        productoExistente.Nombre = _objeto.Nombre;
+                        productoExistente.Departamento = _objeto.Departamento;
+                    }
+                }
+                _objeto = new Objeto(); 
+            }
+        }
+
+        
+        ActualizarExistencias();
+    }
+
+    private void EditarProducto(Objeto producto)
+    {
+        _objeto = producto;
+    }
+
+    private void EliminarProducto(Objeto producto)
+    {
+        Productos.Remove(producto);
+        ActualizarExistencias();
+    }
+
+    private void CancelarEdicion()
+    {
+        _objeto = new Objeto(); 
+    }
+
+    private void MostrarListado()
+    {
+        mostrarListado = true;
+    }
+
+    private void MostrarExistencias()
+    {
+        mostrarListado = false;
+    }
+
+    private void ActualizarExistencias()
+    {
+        existenciasFrutas = Productos.Count(p => p.Departamento == "Frutas");
+        existenciasVerduras = Productos.Count(p => p.Departamento == "Verduras");
+        existenciasLacteos = Productos.Count(p => p.Departamento == "Lácteos");
+    }
+}
